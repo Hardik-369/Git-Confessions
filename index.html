@@ -1,0 +1,1270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Git Confessions | A Poetic Commit Log</title>
+    
+    <!-- External CDNs -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-primary: #0d1117;
+            --bg-secondary: #161b22;
+            --bg-tertiary: #21262d;
+            --text-primary: #e6edf3;
+            --text-secondary: #7d8590;
+            --text-muted: #656d76;
+            --accent-blue: #58a6ff;
+            --accent-green: #3fb950;
+            --accent-red: #f85149;
+            --accent-yellow: #d29922;
+            --accent-purple: #bc8cff;
+            --accent-orange: #ff8c42;
+            --border: #30363d;
+            --glow: rgba(88, 166, 255, 0.3);
+        }
+
+        body {
+            font-family: 'Fira Code', monospace;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        .header {
+            padding: 60px 0 40px;
+            text-align: center;
+            border-bottom: 1px solid var(--border);
+            background: linear-gradient(180deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
+        }
+
+        .header h1 {
+            font-size: clamp(2rem, 5vw, 3.5rem);
+            font-weight: 600;
+            margin-bottom: 20px;
+            background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .header .subtitle {
+            font-size: 1.1rem;
+            color: var(--text-secondary);
+            margin-bottom: 10px;
+        }
+
+        .header .meta {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            font-style: italic;
+        }
+
+        .controls {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 24px;
+            margin: 40px 0;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 16px;
+            align-items: center;
+        }
+
+        .search-box {
+            flex: 1;
+            min-width: 250px;
+            position: relative;
+        }
+
+        .search-input {
+            width: 100%;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 12px 16px 12px 40px;
+            color: var(--text-primary);
+            font-family: 'Fira Code', monospace;
+            font-size: 0.9rem;
+            transition: border-color 0.3s ease;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: var(--accent-blue);
+            box-shadow: 0 0 0 2px rgba(88, 166, 255, 0.1);
+        }
+
+        .search-icon {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+        }
+
+        .filter-buttons {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .filter-btn {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 8px 16px;
+            color: var(--text-secondary);
+            font-family: 'Fira Code', monospace;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .filter-btn:hover {
+            border-color: var(--accent-blue);
+            color: var(--text-primary);
+        }
+
+        .filter-btn.active {
+            background: var(--accent-blue);
+            border-color: var(--accent-blue);
+            color: var(--bg-primary);
+        }
+
+        .stats-display {
+            background: var(--bg-tertiary);
+            border-radius: 8px;
+            padding: 12px 16px;
+            color: var(--text-muted);
+            font-size: 0.85rem;
+        }
+
+        .terminal-prompt {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 20px;
+            margin: 40px 0;
+            font-family: 'Fira Code', monospace;
+        }
+
+        .prompt-line {
+            color: var(--accent-green);
+            margin-bottom: 10px;
+        }
+
+        .prompt-line .user {
+            color: var(--accent-blue);
+        }
+
+        .timeline {
+            position: relative;
+            padding: 40px 0;
+        }
+
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 50%;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: linear-gradient(180deg, transparent, var(--accent-blue), transparent);
+            transform: translateX(-50%);
+        }
+
+        .commit {
+            position: relative;
+            margin-bottom: 60px;
+            opacity: 0;
+            transform: translateY(50px);
+            transition: all 0.3s ease;
+        }
+
+        .commit.hidden {
+            display: none;
+        }
+
+        .commit:nth-child(odd) {
+            padding-right: 50%;
+            text-align: right;
+        }
+
+        .commit:nth-child(even) {
+            padding-left: 50%;
+            text-align: left;
+        }
+
+        .commit::before {
+            content: '';
+            position: absolute;
+            top: 20px;
+            width: 16px;
+            height: 16px;
+            background: var(--accent-blue);
+            border: 3px solid var(--bg-primary);
+            border-radius: 50%;
+            box-shadow: 0 0 20px var(--glow);
+            transition: all 0.3s ease;
+        }
+
+        .commit:nth-child(odd)::before {
+            right: -8px;
+        }
+
+        .commit:nth-child(even)::before {
+            left: -8px;
+        }
+
+        .commit-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 24px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .commit-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--accent-blue), var(--accent-purple));
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .commit-card:hover {
+            border-color: var(--accent-blue);
+            box-shadow: 0 8px 32px rgba(88, 166, 255, 0.1);
+            transform: translateY(-4px);
+        }
+
+        .commit-card:hover::before {
+            opacity: 1;
+        }
+
+        .commit-card.expanded {
+            transform: scale(1.02);
+            border-color: var(--accent-green);
+            box-shadow: 0 12px 48px rgba(63, 185, 80, 0.15);
+        }
+
+        .commit-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 16px;
+            font-size: 0.9rem;
+        }
+
+        .commit-hash {
+            color: var(--accent-yellow);
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .commit-hash:hover {
+            color: var(--accent-orange);
+            text-shadow: 0 0 8px currentColor;
+        }
+
+        .commit-time {
+            color: var(--text-muted);
+            margin-left: auto;
+        }
+
+        .commit-message {
+            font-size: 1.1rem;
+            margin-bottom: 12px;
+            font-weight: 500;
+        }
+
+        .commit-type {
+            color: var(--accent-green);
+        }
+
+        .commit-type.fix {
+            color: var(--accent-red);
+        }
+
+        .commit-type.feat {
+            color: var(--accent-green);
+        }
+
+        .commit-type.refactor {
+            color: var(--accent-purple);
+        }
+
+        .commit-type.docs {
+            color: var(--accent-blue);
+        }
+
+        .commit-type.style {
+            color: var(--accent-orange);
+        }
+
+        .commit-scope {
+            color: var(--accent-purple);
+        }
+
+        .commit-description {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+            line-height: 1.5;
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.4s ease, padding-top 0.4s ease;
+        }
+
+        .commit-card.expanded .commit-description {
+            max-height: 200px;
+            padding-top: 12px;
+            border-top: 1px solid var(--border);
+        }
+
+        .stats {
+            display: flex;
+            gap: 20px;
+            margin-top: 16px;
+            font-size: 0.85rem;
+        }
+
+        .stat {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            color: var(--text-muted);
+        }
+
+        .stat.additions {
+            color: var(--accent-green);
+        }
+
+        .stat.deletions {
+            color: var(--accent-red);
+        }
+
+        .footer {
+            text-align: center;
+            padding: 60px 0;
+            border-top: 1px solid var(--border);
+            background: var(--bg-secondary);
+        }
+
+        .footer p {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+
+        .add-commit-section {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 24px;
+            margin: 40px 0;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 0.3s ease;
+        }
+
+        .add-commit-section.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .add-commit-toggle {
+            background: var(--accent-blue);
+            color: var(--bg-primary);
+            border: none;
+            border-radius: 8px;
+            padding: 12px 24px;
+            font-family: 'Fira Code', monospace;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: 20px;
+        }
+
+        .add-commit-toggle:hover {
+            background: var(--accent-purple);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 16px rgba(88, 166, 255, 0.3);
+        }
+
+        .add-commit-form {
+            display: none;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-top: 20px;
+        }
+
+        .add-commit-form.visible {
+            display: grid;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .form-group.full-width {
+            grid-column: 1 / -1;
+        }
+
+        .form-label {
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+
+        .form-input,
+        .form-select,
+        .form-textarea {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 10px 12px;
+            color: var(--text-primary);
+            font-family: 'Fira Code', monospace;
+            font-size: 0.9rem;
+            transition: border-color 0.3s ease;
+        }
+
+        .form-input:focus,
+        .form-select:focus,
+        .form-textarea:focus {
+            outline: none;
+            border-color: var(--accent-blue);
+            box-shadow: 0 0 0 2px rgba(88, 166, 255, 0.1);
+        }
+
+        .form-textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        .form-actions {
+            grid-column: 1 / -1;
+            display: flex;
+            gap: 12px;
+            justify-content: flex-end;
+            margin-top: 16px;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border-radius: 6px;
+            font-family: 'Fira Code', monospace;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 1px solid var(--border);
+        }
+
+        .btn-primary {
+            background: var(--accent-green);
+            color: var(--bg-primary);
+            border-color: var(--accent-green);
+        }
+
+        .btn-primary:hover {
+            background: var(--accent-blue);
+            border-color: var(--accent-blue);
+        }
+
+        .btn-secondary {
+            background: var(--bg-tertiary);
+            color: var(--text-secondary);
+        }
+
+        .btn-secondary:hover {
+            color: var(--text-primary);
+            border-color: var(--accent-blue);
+        }
+
+        .user-commit {
+            border-left: 3px solid var(--accent-green);
+            position: relative;
+        }
+
+        .user-commit::after {
+            content: '👤';
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            font-size: 1.2rem;
+            opacity: 0.7;
+        }
+
+        .no-results {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-muted);
+            font-style: italic;
+        }
+
+        @media (max-width: 768px) {
+            .timeline::before {
+                left: 20px;
+            }
+
+            .commit {
+                padding-left: 50px !important;
+                padding-right: 20px !important;
+                text-align: left !important;
+            }
+
+            .commit::before {
+                left: 12px !important;
+            }
+
+            .controls {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .filter-buttons {
+                justify-content: center;
+            }
+
+            .add-commit-form {
+                grid-template-columns: 1fr;
+            }
+            
+            .form-actions {
+                flex-direction: column;
+            }
+        }
+
+        .typing-cursor {
+            display: inline-block;
+            width: 2px;
+            height: 1em;
+            background: var(--accent-blue);
+            animation: blink 1s infinite;
+        }
+
+        @keyframes blink {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0; }
+        }
+
+        .glow-text {
+            text-shadow: 0 0 10px currentColor;
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="container">
+            <h1>Git Confessions</h1>
+            <p class="subtitle">A Poetic Commit Log</p>
+            <p class="meta">Built by a developer who's been coding emotion into interfaces for five decades</p>
+        </div>
+    </header>
+
+    <main class="container">
+        <section class="terminal-prompt">
+            <div class="prompt-line">
+                <span class="user">emotion-dev</span>@<span>life</span>:~/feelings$ git log --oneline --emotional
+            </div>
+            <div id="typing-output" style="color: var(--text-secondary); min-height: 1.4em;">
+                <span class="typing-cursor"></span>
+            </div>
+        </section>
+
+        <section class="controls">
+            <div class="search-box">
+                <i class="fas fa-search search-icon"></i>
+                <input type="text" class="search-input" placeholder="Search through emotions..." id="searchInput">
+            </div>
+            <div class="filter-buttons">
+                <button class="filter-btn active" data-filter="all">all</button>
+                <button class="filter-btn" data-filter="fix">fix</button>
+                <button class="filter-btn" data-filter="feat">feat</button>
+                <button class="filter-btn" data-filter="refactor">refactor</button>
+                <button class="filter-btn" data-filter="docs">docs</button>
+                <button class="filter-btn" data-filter="style">style</button>
+            </div>
+            <div class="stats-display" id="statsDisplay">
+                Showing <span id="visibleCount">0</span> of <span id="totalCount">0</span> commits
+            </div>
+        </section>
+
+        <section class="add-commit-section" id="addCommitSection">
+            <button class="add-commit-toggle" id="addCommitToggle">
+                <i class="fas fa-plus"></i> Add Your Own Commit
+            </button>
+            
+            <form class="add-commit-form" id="addCommitForm">
+                <div class="form-group">
+                    <label class="form-label" for="commitType">Type</label>
+                    <select class="form-select" id="commitType" required>
+                        <option value="feat">feat</option>
+                        <option value="fix">fix</option>
+                        <option value="refactor">refactor</option>
+                        <option value="docs">docs</option>
+                        <option value="style">style</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="commitScope">Scope</label>
+                    <input type="text" class="form-input" id="commitScope" placeholder="heart, mind, soul..." required>
+                </div>
+                
+                <div class="form-group full-width">
+                    <label class="form-label" for="commitMessage">Message</label>
+                    <input type="text" class="form-input" id="commitMessage" placeholder="your poetic confession..." required>
+                </div>
+                
+                <div class="form-group full-width">
+                    <label class="form-label" for="commitDescription">Description</label>
+                    <textarea class="form-textarea" id="commitDescription" placeholder="Elaborate on your emotional journey..."></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="commitAdditions">Additions</label>
+                    <input type="text" class="form-input" id="commitAdditions" placeholder="3 hopes, 1 dream...">
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="commitDeletions">Deletions</label>
+                    <input type="text" class="form-input" id="commitDeletions" placeholder="5 fears, 1 regret...">
+                </div>
+                
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" id="cancelBtn">Cancel</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-code-branch"></i> Commit Changes
+                    </button>
+                </div>
+            </form>
+        </section>
+
+        <section class="timeline" id="timeline">
+            <!-- Commits will be dynamically generated here -->
+        </section>
+
+        <div class="no-results" id="noResults" style="display: none;">
+            <i class="fas fa-code-branch" style="font-size: 2rem; margin-bottom: 16px; opacity: 0.5;"></i>
+            <p>No commits found matching your criteria.</p>
+            <p style="margin-top: 8px; font-size: 0.85rem;">Try adjusting your search or filter settings.</p>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <p>End of log. To see more commits, try: <code>git log --follow --emotional --all</code></p>
+            <p style="margin-top: 20px; opacity: 0.7;">~ Five decades of commits and counting ~</p>
+        </div>
+    </footer>
+
+    <script>
+        // JSON data for commits
+        const commitsData = [
+            {
+                hash: "a7f3d2e",
+                type: "fix",
+                scope: "heart",
+                message: "heartbreak overflow on line 23",
+                description: "The buffer couldn't handle the emotional payload. Implemented try-catch blocks around vulnerability, added null checks for promises that were never meant to be kept.",
+                time: "2024-06-10 23:42",
+                icon: "fas fa-code-branch",
+                iconColor: "--accent-blue",
+                additions: "12 tears",
+                deletions: "1 dream"
+            },
+            {
+                hash: "b3e1f8d",
+                type: "feat",
+                scope: "trust",
+                message: "implemented trustFallbackProtocol()",
+                description: "Added graceful degradation when main trust service fails. Backup systems include: old friends, morning coffee, and the way sunlight hits the keyboard at 6 AM.",
+                time: "2024-05-22 14:17",
+                icon: "fas fa-code-branch",
+                iconColor: "--accent-green",
+                additions: "8 connections",
+                deletions: "3 walls"
+            },
+            {
+                hash: "c9a4b76",
+                type: "fix",
+                scope: "mind",
+                message: "logic reverted to pre-anxiety state",
+                description: "Emergency rollback after critical thinking loop caused infinite recursion. Restored from backup when thoughts were simpler and sleep came easier.",
+                time: "2024-04-08 09:33",
+                icon: "fas fa-undo",
+                iconColor: "--accent-red",
+                additions: "6 hours sleep",
+                deletions: "99 worries"
+            },
+            {
+                hash: "d5f2a91",
+                type: "refactor",
+                scope: "loneliness",
+                message: "traced memory leak in social_connections.js",
+                description: "Found the source: unreleased event listeners on old friendships. Added proper cleanup routines and scheduled maintenance for keeping in touch.",
+                time: "2024-03-15 20:45",
+                icon: "fas fa-bug",
+                iconColor: "--accent-yellow",
+                additions: "4 text messages",
+                deletions: "1 isolation"
+            },
+            {
+                hash: "e8c7d43",
+                type: "feat",
+                scope: "hope",
+                message: "added async/await for patience.js",
+                description: "Refactored blocking synchronous despair into non-blocking promises. Now life can continue processing while waiting for better days to resolve.",
+                time: "2024-02-29 16:22",
+                icon: "fas fa-star",
+                iconColor: "--accent-purple",
+                additions: "infinite possibilities",
+                deletions: "1 deadline"
+            },
+            {
+                hash: "f1a9e67",
+                type: "docs",
+                scope: "boundaries",
+                message: "patched vulnerability in saying_no.exe",
+                description: "Critical security update: reinforced personal boundaries against overcommitment attacks. Added input validation for requests that exceed emotional capacity.",
+                time: "2024-01-14 08:11",
+                icon: "fas fa-shield-alt",
+                iconColor: "--accent-blue",
+                additions: "1 backbone",
+                deletions: "5 toxic requests"
+            },
+            {
+                hash: "a2b8c94",
+                type: "feat",
+                scope: "souls",
+                message: "successfully merged feature/love branch",
+                description: "Long-running feature branch finally stable enough for production. Resolved all conflicts between independence and intimacy. No breaking changes detected.",
+                time: "2023-12-03 22:17",
+                icon: "fas fa-heart",
+                iconColor: "--accent-red",
+                additions: "1 life partner",
+                deletions: "0 regrets"
+            },
+            {
+                hash: "3d4e5f6",
+                type: "feat",
+                scope: "growth",
+                message: "first commit: hello world, goodbye comfort zone",
+                description: "Initial repository setup for personal growth project. Established version control for life decisions. Set up deployment pipeline for dreams → reality.",
+                time: "2023-09-27 05:44",
+                icon: "fas fa-seedling",
+                iconColor: "--accent-green",
+                additions: "everything",
+                deletions: "fear of unknown"
+            },
+            {
+                hash: "x8k9m42",
+                type: "style",
+                scope: "confidence",
+                message: "updated CSS for self-worth display",
+                description: "Improved visual hierarchy in personal brand. Enhanced contrast ratios for better visibility of achievements. Removed deprecated imposter syndrome classes.",
+                time: "2023-08-15 12:30",
+                icon: "fas fa-paint-brush",
+                iconColor: "--accent-orange",
+                additions: "5 compliments",
+                deletions: "12 self-doubts"
+            },
+            {
+                hash: "q7w3r89",
+                type: "fix",
+                scope: "relationships",
+                message: "resolved merge conflict in communication.js",
+                description: "Fixed issue where listening() and speaking() functions were running simultaneously. Implemented proper turn-taking protocol and error handling for misunderstandings.",
+                time: "2023-07-02 19:45",
+                icon: "fas fa-comments",
+                iconColor: "--accent-blue",
+                additions: "3 deep conversations",
+                deletions: "1 silent treatment"
+            },
+            {
+                hash: "z5n8b21",
+                type: "refactor",
+                scope: "habits",
+                message: "migrated from procrastination.old to productivity.modern",
+                description: "Legacy procrastination system was causing performance issues. Rebuilt with micro-habits architecture and integrated reward-driven development practices.",
+                time: "2023-06-18 07:22",
+                icon: "fas fa-sync-alt",
+                iconColor: "--accent-purple",
+                additions: "8 completed tasks",
+                deletions: "4 excuses"
+            },
+            {
+                hash: "p4l7v33",
+                type: "docs",
+                scope: "wisdom",
+                message: "documented lessons learned from failure.log",
+                description: "Added comprehensive documentation for all major life failures. Created troubleshooting guide and best practices for future reference. Knowledge base now searchable.",
+                time: "2023-05-10 14:55",
+                icon: "fas fa-book",
+                iconColor: "--accent-yellow",
+                additions: "20 life lessons",
+                deletions: "1 victim mindset"
+            }
+        ];
+
+        // State management
+        let filteredCommits = [];
+        let allCommits = [];
+        let currentFilter = 'all';
+        let currentSearch = '';
+
+        // Register ScrollTrigger plugin
+        gsap.registerPlugin(ScrollTrigger);
+
+        // DOM elements
+        const timeline = document.getElementById('timeline');
+        const searchInput = document.getElementById('searchInput');
+        const filterButtons = document.querySelectorAll('.filter-btn');
+        const statsDisplay = document.getElementById('statsDisplay');
+        const visibleCount = document.getElementById('visibleCount');
+        const totalCount = document.getElementById('totalCount');
+        const noResults = document.getElementById('noResults');
+        const addCommitSection = document.getElementById('addCommitSection');
+        const addCommitToggle = document.getElementById('addCommitToggle');
+        const addCommitForm = document.getElementById('addCommitForm');
+        const cancelBtn = document.getElementById('cancelBtn');
+
+        // Load user commits from localStorage
+        function loadUserCommits() {
+            const userCommits = localStorage.getItem('gitConfessionsUserCommits');
+            return userCommits ? JSON.parse(userCommits) : [];
+        }
+
+        // Save user commits to localStorage
+        function saveUserCommits(commits) {
+            localStorage.setItem('gitConfessionsUserCommits', JSON.stringify(commits));
+        }
+
+        // Generate commit hash
+        function generateCommitHash() {
+            const chars = 'abcdef0123456789';
+            let hash = '';
+            for (let i = 0; i < 7; i++) {
+                hash += chars[Math.floor(Math.random() * chars.length)];
+            }
+            return hash;
+        }
+
+        // Get current timestamp
+        function getCurrentTimestamp() {
+            const now = new Date();
+            return now.toLocaleString('en-CA', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: false
+            }).replace(', ', ' ');
+        }
+
+        // Merge commits (user commits first, then original commits)
+        function mergeCommits() {
+            const userCommits = loadUserCommits();
+            allCommits = [...userCommits, ...commitsData];
+            filteredCommits = [...allCommits];
+        }
+
+        // Initialize the application
+        function init() {
+            mergeCommits();
+            totalCount.textContent = allCommits.length;
+            renderCommits();
+            initEventListeners();
+            initCommitForm();
+            initAnimations();
+            
+            // Show add commit section with animation
+            setTimeout(() => {
+                addCommitSection.classList.add('visible');
+            }, 1000);
+        }
+
+        // Add commit form functionality
+        function initCommitForm() {
+            // Toggle form visibility
+            addCommitToggle.addEventListener('click', function() {
+                console.log('Add commit button clicked');
+                addCommitForm.classList.toggle('visible');
+                if (addCommitForm.classList.contains('visible')) {
+                    addCommitToggle.style.display = 'none';
+                } else {
+                    addCommitToggle.style.display = 'block';
+                }
+            });
+
+            // Cancel button
+            cancelBtn.addEventListener('click', function() {
+                console.log('Cancel button clicked');
+                addCommitForm.classList.remove('visible');
+                addCommitToggle.style.display = 'block';
+                addCommitForm.reset();
+            });
+
+            // Form submission
+            addCommitForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                console.log('Form submitted');
+                
+                const newCommit = {
+                    hash: generateCommitHash(),
+                    type: document.getElementById('commitType').value,
+                    scope: document.getElementById('commitScope').value,
+                    message: document.getElementById('commitMessage').value,
+                    description: document.getElementById('commitDescription').value || 'A personal confession from the heart.',
+                    time: getCurrentTimestamp(),
+                    icon: "fas fa-heart",
+                    iconColor: "--accent-green",
+                    additions: document.getElementById('commitAdditions').value || '1 memory',
+                    deletions: document.getElementById('commitDeletions').value || '0 regrets',
+                    isUserCommit: true
+                };
+
+                console.log('New commit created:', newCommit);
+
+                // Save to localStorage
+                const userCommits = loadUserCommits();
+                userCommits.unshift(newCommit); // Add to beginning
+                saveUserCommits(userCommits);
+
+                // Update UI
+                mergeCommits();
+                filterCommits();
+                
+                // Hide form
+                addCommitForm.classList.remove('visible');
+                addCommitToggle.style.display = 'block';
+                addCommitForm.reset();
+
+                // Show success message
+                showToast('Your emotional commit has been added to the timeline! 💙');
+            });
+        }
+
+        // Render commits to the timeline
+        function renderCommits() {
+            timeline.innerHTML = '';
+            
+            if (filteredCommits.length === 0) {
+                noResults.style.display = 'block';
+                visibleCount.textContent = '0';
+                return;
+            }
+            
+            noResults.style.display = 'none';
+            visibleCount.textContent = filteredCommits.length;
+
+            filteredCommits.forEach((commit, index) => {
+                const commitElement = createCommitElement(commit, index);
+                timeline.appendChild(commitElement);
+            });
+
+            // Reinitialize animations for new elements
+            initCommitAnimations();
+        }
+
+        // Create a commit HTML element
+        function createCommitElement(commit, index) {
+            const article = document.createElement('article');
+            article.className = `commit ${commit.isUserCommit ? 'user-commit' : ''}`;
+            article.dataset.type = commit.type;
+            
+            article.innerHTML = `
+                <div class="commit-card" data-commit-hash="${commit.hash}">
+                    <div class="commit-header">
+                        <span class="commit-hash" title="Click to copy hash">${commit.hash}</span>
+                        <i class="${commit.icon}" style="color: var(${commit.iconColor});"></i>
+                        <span class="commit-time">${commit.time}</span>
+                    </div>
+                    <div class="commit-message">
+                        <span class="commit-type ${commit.type}">${commit.type}</span>(<span class="commit-scope">${commit.scope}</span>): <span class="glow-text">${commit.message}</span>
+                    </div>
+                    <div class="commit-description">
+                        ${commit.description}
+                    </div>
+                    <div class="stats">
+                        <span class="stat additions"><i class="fas fa-plus"></i> ${commit.additions}</span>
+                        <span class="stat deletions"><i class="fas fa-minus"></i> ${commit.deletions}</span>
+                    </div>
+                </div>
+            `;
+
+            return article;
+        }
+
+        // Filter commits based on search and filter criteria
+        function filterCommits() {
+            filteredCommits = allCommits.filter(commit => {
+                const matchesFilter = currentFilter === 'all' || commit.type === currentFilter;
+                const matchesSearch = currentSearch === '' || 
+                    commit.message.toLowerCase().includes(currentSearch.toLowerCase()) ||
+                    commit.description.toLowerCase().includes(currentSearch.toLowerCase()) ||
+                    commit.scope.toLowerCase().includes(currentSearch.toLowerCase());
+                
+                return matchesFilter && matchesSearch;
+            });
+            
+            renderCommits();
+        }
+
+        // Initialize event listeners
+        function initEventListeners() {
+            // Search functionality
+            searchInput.addEventListener('input', (e) => {
+                currentSearch = e.target.value;
+                filterCommits();
+            });
+
+            // Filter buttons
+            filterButtons.forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    filterButtons.forEach(b => b.classList.remove('active'));
+                    e.target.classList.add('active');
+                    currentFilter = e.target.dataset.filter;
+                    filterCommits();
+                });
+            });
+
+            // Commit card interactions
+            document.addEventListener('click', (e) => {
+                if (e.target.closest('.commit-card')) {
+                    const card = e.target.closest('.commit-card');
+                    card.classList.toggle('expanded');
+                }
+
+                if (e.target.classList.contains('commit-hash')) {
+                    copyToClipboard(e.target.textContent);
+                    showToast('Commit hash copied to clipboard!');
+                }
+            });
+        }
+
+        // Copy text to clipboard
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text).catch(() => {
+                // Fallback for older browsers
+                const textArea = document.createElement('textarea');
+                textArea.value = text;
+                document.body.appendChild(textArea);
+                textArea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textArea);
+            });
+        }
+
+        // Show toast notification
+        function showToast(message) {
+            const toast = document.createElement('div');
+            toast.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: var(--accent-green);
+                color: var(--bg-primary);
+                padding: 12px 20px;
+                border-radius: 8px;
+                font-family: 'Fira Code', monospace;
+                font-size: 0.9rem;
+                z-index: 1000;
+                opacity: 0;
+                transform: translateY(-20px);
+                transition: all 0.3s ease;
+            `;
+            toast.textContent = message;
+            document.body.appendChild(toast);
+
+            // Animate in
+            requestAnimationFrame(() => {
+                toast.style.opacity = '1';
+                toast.style.transform = 'translateY(0)';
+            });
+
+            // Remove after 3 seconds
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateY(-20px)';
+                setTimeout(() => document.body.removeChild(toast), 300);
+            }, 3000);
+        }
+
+        // Initialize animations
+        function initAnimations() {
+            // Typing animation for terminal
+            const typingText = `Showing ${commitsData.length} commits from emotional-journey branch...`;
+            const outputElement = document.getElementById('typing-output');
+            
+            let i = 0;
+            function typeWriter() {
+                if (i < typingText.length) {
+                    outputElement.innerHTML = typingText.substring(0, i + 1) + '<span class="typing-cursor"></span>';
+                    i++;
+                    setTimeout(typeWriter, 50);
+                } else {
+                    setTimeout(() => {
+                        outputElement.innerHTML = typingText;
+                    }, 500);
+                }
+            }
+
+            setTimeout(typeWriter, 1000);
+
+            // Header animations
+            gsap.fromTo('.header h1', 
+                { opacity: 0, y: -50, scale: 0.8 },
+                { opacity: 1, y: 0, scale: 1, duration: 1.5, ease: "back.out(1.7)", delay: 0.5 }
+            );
+
+            gsap.fromTo('.header .subtitle, .header .meta', 
+                { opacity: 0, y: 20 },
+                { opacity: 1, y: 0, duration: 1, ease: "power2.out", stagger: 0.2, delay: 1 }
+            );
+
+            // Controls animation
+            gsap.fromTo('.controls', 
+                { opacity: 0, y: 30 },
+                { opacity: 1, y: 0, duration: 0.8, ease: "power2.out", delay: 1.5 }
+            );
+        }
+
+        // Initialize commit-specific animations
+        function initCommitAnimations() {
+            // Animate timeline line
+            gsap.fromTo('.timeline::before', 
+                { scaleY: 0 },
+                {
+                    scaleY: 1,
+                    duration: 2,
+                    ease: "power2.inOut",
+                    scrollTrigger: {
+                        trigger: '.timeline',
+                        start: 'top 80%',
+                        end: 'bottom 20%',
+                        scrub: 1
+                    }
+                }
+            );
+
+            // Individual commit animations
+            document.querySelectorAll('.commit').forEach((commit, index) => {
+                gsap.fromTo(commit,
+                    {
+                        opacity: 0,
+                        x: index % 2 === 0 ? -100 : 100,
+                        rotationY: index % 2 === 0 ? -15 : 15
+                    },
+                    {
+                        opacity: 1,
+                        x: 0,
+                        rotationY: 0,
+                        duration: 1,
+                        ease: "back.out(1.7)",
+                        scrollTrigger: {
+                            trigger: commit,
+                            start: 'top 85%',
+                            end: 'bottom 15%',
+                            toggleActions: 'play none none reverse'
+                        }
+                    }
+                );
+
+                // Enhanced hover interactions
+                const card = commit.querySelector('.commit-card');
+                card.addEventListener('mouseenter', () => {
+                    gsap.to(card, {
+                        scale: 1.02,
+                        duration: 0.3,
+                        ease: "power2.out"
+                    });
+                    
+                    gsap.to(card.querySelector('.glow-text'), {
+                        textShadow: "0 0 20px currentColor",
+                        duration: 0.3,
+                        ease: "power2.out"
+                    });
+                });
+
+                card.addEventListener('mouseleave', () => {
+                    if (!card.classList.contains('expanded')) {
+                        gsap.to(card, {
+                            scale: 1,
+                            duration: 0.3,
+                            ease: "power2.out"
+                        });
+                    }
+                    
+                    gsap.to(card.querySelector('.glow-text'), {
+                        textShadow: "0 0 10px currentColor",
+                        duration: 0.3,
+                        ease: "power2.out"
+                    });
+                });
+            });
+
+            // Add floating animation to commit dots
+            document.querySelectorAll('.commit::before').forEach((dot, index) => {
+                gsap.to(dot, {
+                    y: "random(-5, 5)",
+                    duration: "random(2, 4)",
+                    repeat: -1,
+                    yoyo: true,
+                    ease: "sine.inOut",
+                    delay: index * 0.2
+                });
+            });
+        }
+
+        // Console easter egg
+        console.log(`
+ ██████╗ ██╗████████╗     ██████╗ ██████╗ ███╗   ██╗███████╗███████╗███████╗███████╗██╗ ██████╗ ███╗   ██╗███████╗
+██╔════╝ ██║╚══██╔══╝    ██╔════╝██╔═══██╗████╗  ██║██╔════╝██╔════╝██╔════╝██╔════╝██║██╔═══██╗████╗  ██║██╔════╝
+██║  ███╗██║   ██║       ██║     ██║   ██║██╔██╗ ██║█████╗  █████╗  ███████╗███████╗██║██║   ██║██╔██╗ ██║███████╗
+██║   ██║██║   ██║       ██║     ██║   ██║██║╚██╗██║██╔══╝  ██╔══╝  ╚════██║╚════██║██║██║   ██║██║╚██╗██║╚════██║
+╚██████╔╝██║   ██║       ╚██████╗╚██████╔╝██║ ╚████║██║     ███████╗███████║███████║██║╚██████╔╝██║ ╚████║███████║
+ ╚═════╝ ╚═╝   ╚═╝        ╚═════╝ ╚═════╝ ╚═╝  ╚═══╝╚═╝     ╚══════╝╚══════╝╚══════╝╚═╝ ╚═════╝ ╚═╝  ╚═══╝╚══════╝
+
+Thanks for exploring the commit log of a heart. 
+Every line of code tells a story. What's yours?
+
+Available commits in JSON:
+        `, allCommits);
+
+        // Initialize the app when DOM is loaded
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>
